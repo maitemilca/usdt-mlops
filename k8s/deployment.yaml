@@ -1,0 +1,105 @@
+# Fase 3 -- Deployment del servicio de inferencia.
+#
+# Un Deployment, y no Pods sueltos, porque es el Deployment quien mantiene el
+# numero de replicas deseado: si un pod muere, lo repone solo. Esa es la
+# autorreparacion que pide la demostracion 3 de la consigna.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tc-usdt-api
+  labels:
+    app: tc-usdt-api
+spec:
+  # 3 replicas: el minimo que pide la consigna. Con las sondas configuradas
+  # abajo, el Service solo reparte trafico entre las que estan listas.
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: tc-usdt-api
+
+  # Durante una actualizacion nunca baja de 2 pods disponibles: el servicio
+  # sigue respondiendo mientras se reemplazan los pods viejos.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  template:
+    metadata:
+      labels:
+        app: tc-usdt-api
+    spec:
+      containers:
+        - name: tc-usdt-api
+          image: tc-usdt-api:1.0
+
+          # La imagen se construye localmente y el Kubernetes de Docker
+          # Desktop comparte el almacen de imagenes del demonio de Docker, asi
+          # que no hay que subirla a ningun registro. "Never" evita que
+          # Kubernetes intente descargarla de Docker Hub y falle.
+          imagePullPolicy: Never
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          # startupProbe: le da al proceso hasta 60 segundos (12 x 5) para
+          # cargar el modelo desde el store de MLflow antes de que las otras
+          # sondas empiecen a contar. Sin esto, la livenessProbe podria matar
+          # el pod durante un arranque lento y dejarlo en bucle de reinicios.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+
+          # readinessProbe: decide si el pod recibe trafico del Service. Un
+          # pod que todavia no cargo el modelo queda fuera del balanceo en vez
+          # de devolver errores.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+
+          # livenessProbe: si el proceso se cuelga, Kubernetes reinicia el
+          # contenedor. Es la otra mitad de la autorreparacion.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Limites ajustados a una maquina de 13 GB con Docker Desktop
+          # corriendo. Con 256Mi por pod, escalar a 5 replicas ocupa 1,25 GB
+          # como maximo, que entra sin ahogar el escritorio.
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "192Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          # El contenedor no necesita escribir en su sistema de archivos ni
+          # escalar privilegios: se lo bloquea explicitamente.
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            # El UID va explicito y numerico. Con runAsNonRoot activado, el
+            # kubelet valida antes de arrancar que el usuario no sea root, y
+            # no puede resolver un nombre de usuario a UID: si la imagen
+            # declarara "USER servicio" en vez de "USER 10001", el pod
+            # fallaria con CreateContainerConfigError.
+            runAsUser: 10001
+            capabilities:
+              drop: ["ALL"]
+
+      # Margen para que el pod cierre sus conexiones abiertas antes de morir.
+      terminationGracePeriodSeconds: 20

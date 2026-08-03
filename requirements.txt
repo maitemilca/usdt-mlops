@@ -1,13 +1,31 @@
+# Dependencias fijadas por version exacta (consigna Fase 2).
+#
+# Todas las versiones estan verificadas: se instalaron y ejecutaron sobre
+# Python 3.12 en el entorno de desarrollo y dentro de la imagen de Docker.
+# No usar rangos (>=): un rango hace que la imagen construida hoy y la
+# construida el mes que viene no sean la misma, y se pierde la
+# reproducibilidad que es el objetivo del ejercicio.
+
+# --- Ciclo de vida del modelo ---
 mlflow==3.15.0
+
+# --- Modelado ---
 scikit-learn==1.8.0
 xgboost==3.3.0
+
+# --- Datos ---
 pandas==2.3.3
 numpy==2.4.4
+scipy==1.17.1
+
+# --- Servicio de inferencia ---
 fastapi==0.141.1
 uvicorn==0.52.0
 pydantic==2.13.4
-scipy==1.17.1
+
+# --- Graficos de los monitores de deriva ---
 matplotlib==3.10.8
-streamlit==1.60.0
+
+# --- Pruebas automatizadas ---
+pytest==8.4.2
 requests==2.33.1
-pytest==9.1.1

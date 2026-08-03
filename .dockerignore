@@ -1,17 +1,26 @@
+# Todo lo que no necesita la imagen. Cuanto menos entre, mas rapido el build
+# y menos superficie tiene la imagen final.
+
+.venv/
 __pycache__/
 *.pyc
-.venv/
+.pytest_cache/
 .git/
+.gitignore
 
-# Store local de desarrollo (el de la Fase 1, con el que corriste `mlflow ui`).
-# El contenedor genera su propio store en el build -- no lo necesita.
-src/mlruns/
-src/mlflow.db
-src/DEPLOYED_MODEL.md
+# Evidencia y resultados: se generan en tu maquina, no dentro del contenedor.
+evidencia/
+resultados/
+docs/
 
-# Datos que NO deben entrar a la imagen: el holdout y las fuentes del BCB son
-# para la Fase 6 (drift), no para entrenar el modelo que se despliega.
-data/usdt_bs_holdout_post_2025-12-11.csv
-data/TCO_fecha_corte_2026-06-26_al_2026-07-30.csv
-data/tco_oficial_diario_post_flexibilizacion.csv
-data/DATA_SOURCES.md
+# Los datos crudos NO entran: el modelo ya esta entrenado dentro del store de
+# MLflow que se copia. El contenedor solo sirve predicciones; no reentrena.
+data/
+
+# Manifiestos, interfaz y scripts: se ejecutan desde fuera del contenedor.
+k8s/
+ui/
+scripts/
+
+# Documentacion
+*.md
