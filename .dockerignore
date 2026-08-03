@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+.git/
+
+# Store local de desarrollo (el de la Fase 1, con el que corriste `mlflow ui`).
+# El contenedor genera su propio store en el build -- no lo necesita.
+src/mlruns/
+src/mlflow.db
+src/DEPLOYED_MODEL.md
+
+# Datos que NO deben entrar a la imagen: el holdout y las fuentes del BCB son
+# para la Fase 6 (drift), no para entrenar el modelo que se despliega.
+data/usdt_bs_holdout_post_2025-12-11.csv
+data/TCO_fecha_corte_2026-06-26_al_2026-07-30.csv
+data/tco_oficial_diario_post_flexibilizacion.csv
+data/DATA_SOURCES.md
