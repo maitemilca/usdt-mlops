@@ -4,10 +4,17 @@
 # Uso:
 #   .\scripts\01_preparar_entorno.ps1
 #
-# Crea un entorno virtual en .venv\ e instala las 13 dependencias fijadas
+# Crea un entorno virtual en .venv\ e instala las 12 dependencias fijadas
 # por version exacta en requirements.txt. Fijar las versiones (y no usar
 # rangos) es lo que garantiza que tu entorno y el de la imagen de Docker
 # sean identicos.
+#
+# streamlit NO esta aca: vive aparte en ui\requirements.txt. Es a proposito.
+# La consigna pide que la interfaz consuma la API real desplegada en
+# Kubernetes y no un proceso local, y mantener sus dependencias separadas es
+# lo que garantiza que la interfaz no pueda importar el modelo ni las
+# librerias de modelado aunque quisiera. Para la interfaz:
+#   python -m pip install -r ui\requirements.txt
  
 $ErrorActionPreference = "Stop"
  

@@ -1,52 +1,24 @@
 #!/usr/bin/env bash
-# Paso 1.1 — Crear el entorno e instalar dependencias.
-#
-# Uso:
-#   ./scripts/01_preparar_entorno.sh
-#
-# Crea un entorno virtual en .venv/ e instala las 13 dependencias fijadas
-# por versión exacta en requirements.txt. Fijar las versiones (y no usar
-# rangos) es lo que garantiza que el entorno de desarrollo y el de la
-# imagen de Docker sean idénticos.
+# Paso 1 -- Crea el entorno virtual e instala las dependencias fijadas.
+# Se ejecuta una sola vez, salvo que cambie requirements.txt.
 set -euo pipefail
- 
-cd "$(dirname "$0")/.."   # ubicarse en la raíz del repo, sin importar desde dónde se llame
- 
-PYTHON_BIN="python3"
-if command -v py >/dev/null 2>&1; then
-  PYTHON_BIN="py -3.12"
-fi
- 
-if [ ! -d ".venv" ]; then
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$RAIZ"
+
+echo ">> Python del sistema: $(python3 --version)"
+if [ ! -d .venv ]; then
   echo ">> Creando entorno virtual en .venv/"
-  $PYTHON_BIN -m venv .venv
-else
-  echo ">> .venv/ ya existe, reutilizando"
+  python3 -m venv .venv
 fi
- 
-if [ -f ".venv/bin/activate" ]; then
-  # shellcheck disable=SC1091
-  source .venv/bin/activate
-else
-  # shellcheck disable=SC1091
-  source .venv/Scripts/activate   # Windows (Git Bash)
-fi
- 
-echo ">> Instalando dependencias (requirements.txt)"
-python -m pip install --upgrade pip -q
-python -m pip install -r requirements.txt -q
- 
+
+echo ">> Instalando dependencias (puede tardar unos minutos la primera vez)"
+.venv/bin/pip install --quiet --upgrade pip
+.venv/bin/pip install --quiet -r requirements.txt
+
 echo ">> Verificando la instalacion"
-python - <<'PYEOF'
-import importlib
-paquetes = ["mlflow", "sklearn", "xgboost", "pandas"]
-nombres_pip = {"sklearn": "scikit-learn"}
-versiones = []
-for p in paquetes:
-    mod = importlib.import_module(p)
-    nombre = nombres_pip.get(p, p)
-    versiones.append(f"{nombre} {mod.__version__}")
-print("   " + " | ".join(versiones))
-PYEOF
- 
+.venv/bin/python - <<'PY'
+import mlflow, sklearn, xgboost, fastapi, scipy, matplotlib, pandas, numpy
+print(f"   mlflow {mlflow.__version__} | scikit-learn {sklearn.__version__} | "
+      f"xgboost {xgboost.__version__} | pandas {pandas.__version__}")
+PY
 echo ">> Entorno listo. Activalo con:  source .venv/bin/activate"
