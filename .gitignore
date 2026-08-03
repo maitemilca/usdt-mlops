@@ -1,6 +1,25 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Python
 __pycache__/
 *.py[cod]
-.venv/
+.pytest_cache/
+
+# Store de MLflow: son artefactos binarios que se regeneran con
+# scripts/02_entrenar.sh. No se versionan, pero SI hacen falta para construir
+# la imagen de Docker (ver el Dockerfile).
+mlflow_store/
+
+# Salidas generadas por los monitores y las pruebas de Kubernetes.
+resultados/
+evidencia/*.txt
+evidencia/*.log
+
+# Se mantiene la carpeta de evidencia en el repositorio aunque este vacia.
+!evidencia/.gitkeep
+
+# Sistema operativo
 .DS_Store
-.idea/
-.vscode/
+Thumbs.db

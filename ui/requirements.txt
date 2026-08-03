@@ -1,0 +1,6 @@
+# Dependencias solo de la interfaz. Van aparte de las del servicio a proposito:
+# la interfaz es un cliente HTTP y no debe poder importar el modelo ni las
+# librerias de modelado, para que no quepa duda de que no predice por su cuenta.
+streamlit==1.60.0
+requests==2.33.1
+pandas==2.3.3
