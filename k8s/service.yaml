@@ -1,0 +1,28 @@
+# Fase 3 -- Service que expone las replicas y reparte el trafico.
+#
+# Por que NodePort y no `kubectl port-forward`:
+# port-forward abre un tunel directo contra UN solo pod y lo mantiene toda la
+# sesion. Con eso, cien peticiones seguidas las contesta siempre el mismo pod
+# y seria imposible demostrar el balanceo de carga que pide la consigna.
+# NodePort pasa por el kube-proxy real del Service, que es quien reparte las
+# conexiones entre los pods listos.
+apiVersion: v1
+kind: Service
+metadata:
+  name: tc-usdt-api-service
+  labels:
+    app: tc-usdt-api
+spec:
+  type: NodePort
+
+  # El Service encuentra sus pods por esta etiqueta, no por nombre. Por eso
+  # cuando Kubernetes repone un pod eliminado, el nuevo entra al balanceo
+  # automaticamente: nace con la misma etiqueta.
+  selector:
+    app: tc-usdt-api
+
+  ports:
+    - name: http
+      port: 8000         # puerto del Service dentro del clúster
+      targetPort: 8000   # puerto del contenedor
+      nodePort: 30080    # puerto expuesto en el nodo -> http://localhost:30080
