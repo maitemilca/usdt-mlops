@@ -338,10 +338,18 @@ def entrenar_todo(X_train, X_test, y_train, y_test, contexto):
 
 def registrar_ganador(ganador, poner_alias: bool, nota: str, contexto: dict) -> None:
     """Registra la mejor corrida en el Model Registry y marca el alias."""
-    auc, run_id, uri_modelo, nombre, hiperparams = ganador
+    metrica_principal, run_id, uri_modelo, nombre, hiperparams = ganador
 
     version = mlflow.register_model(uri_modelo, cfg.REGISTERED_MODEL_NAME)
     cliente = mlflow.MlflowClient()
+
+    # Se leen las metricas reales del run (no se reutiliza el valor que
+    # decidio la seleccion): asi el reporte muestra tanto el criterio de
+    # seleccion (CV) como el desempeno en el test cronologico, cada uno con
+    # su nombre correcto.
+    metricas_run = cliente.get_run(run_id).data.metrics
+    balanceada_test = metricas_run.get("exactitud_balanceada", float("nan"))
+    auc_test = metricas_run.get("roc_auc", float("nan"))
 
     # La descripcion se ve en la interfaz del Model Registry: es lo que
     # permite explicar en vivo por que existe cada version.
@@ -350,7 +358,9 @@ def registrar_ganador(ganador, poner_alias: bool, nota: str, contexto: dict) -> 
         description=(
             f"{nota}\n\n"
             f"Corrida ganadora: {nombre} ({hiperparams})\n"
-            f"ROC AUC en test: {auc:.4f}\n"
+            f"{cfg.METRICA_PRINCIPAL} (criterio de seleccion): {metrica_principal:.4f}\n"
+            f"Exactitud balanceada en test: {balanceada_test:.4f}\n"
+            f"ROC AUC en test: {auc_test:.4f}\n"
             f"Datos hasta: {contexto['fecha_corte']}\n"
             f"Filas de entrenamiento: {contexto['n_train']}"
         ),
@@ -358,7 +368,7 @@ def registrar_ganador(ganador, poner_alias: bool, nota: str, contexto: dict) -> 
     cliente.set_model_version_tag(cfg.REGISTERED_MODEL_NAME, version.version,
                                  "fecha_corte_datos", contexto["fecha_corte"])
     cliente.set_model_version_tag(cfg.REGISTERED_MODEL_NAME, version.version,
-                                 "roc_auc_test", f"{auc:.4f}")
+                                 "roc_auc_test", f"{auc_test:.4f}")
 
     print(f"\nRegistrado '{cfg.REGISTERED_MODEL_NAME}' version {version.version}  (run {run_id})")
 
@@ -369,10 +379,12 @@ def registrar_ganador(ganador, poner_alias: bool, nota: str, contexto: dict) -> 
 
     cliente.set_registered_model_alias(cfg.REGISTERED_MODEL_NAME, cfg.DEPLOYMENT_ALIAS, version.version)
     print(f"  Alias '{cfg.DEPLOYMENT_ALIAS}' -> version {version.version}")
-    _escribir_ficha(version.version, run_id, nombre, hiperparams, auc, nota, contexto)
+    _escribir_ficha(version.version, run_id, nombre, hiperparams, metrica_principal,
+                    balanceada_test, auc_test, nota, contexto)
 
 
-def _escribir_ficha(version, run_id, nombre, hiperparams, auc, nota, contexto) -> None:
+def _escribir_ficha(version, run_id, nombre, hiperparams, metrica_principal,
+                    balanceada_test, auc_test, nota, contexto) -> None:
     """
     Deja por escrito que version esta desplegada y de que run salio.
 
@@ -394,7 +406,9 @@ def _escribir_ficha(version, run_id, nombre, hiperparams, auc, nota, contexto) -
 | Experimento | `{cfg.MLFLOW_EXPERIMENT_NAME}` |
 | Corrida ganadora | `{nombre}` |
 | Hiperparametros | {hiperparams} |
-| ROC AUC en test | {auc:.4f} |
+| {cfg.METRICA_PRINCIPAL} (criterio de seleccion) | {metrica_principal:.4f} |
+| Exactitud balanceada en test | {balanceada_test:.4f} |
+| ROC AUC en test | {auc_test:.4f} |
 | Datos hasta | {contexto['fecha_corte']} |
 | Filas train / test | {contexto['n_train']} / {contexto['n_test']} |
 | Semilla | {cfg.RANDOM_SEED} |
