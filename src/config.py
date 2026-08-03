@@ -32,14 +32,15 @@ CSV_TCO_DIARIO = DIR_DATOS / "tco_oficial_diario.csv"
 # Backend sqlite (no el store de archivos por defecto) porque el Model
 # Registry con alias necesita una base de datos relacional.
 #
-# .as_posix() y no str(): una URI usa barras normales SIEMPRE, en cualquier
-# sistema operativo. En Windows, str() devolveria
-# "C:\Users\...\mlflow.db" y la URI quedaria "sqlite:///C:\Users\...",
-# que SQLAlchemy interpreta mal porque la contrabarra es un escape. Ademas
-# portar_store.py busca el tramo "/mlartifacts" para deducir el prefijo
-# viejo, y con contrabarras no lo encontraria.
+# .as_uri() y no .as_posix() para ARTIFACT_ROOT: MLflow resuelve el
+# repositorio de artefactos mirando el ESQUEMA de la URI (file, s3, etc.).
+# .as_posix()  por .as_uri para que funciones en windows y linux dado -- sin esquema -- y MLflow
+# interpreta "E" como si fuera el esquema (como en "e://algo"), que no esta
+# registrado, y falla con "Could not find a registered artifact repository".
+# .as_uri() arma la URI completa ("file:///E:/MIAV1E3/") con el esquema
+# "file" explicito, que si esta registrado, en Windows y en Linux por igual.
 TRACKING_URI = f"sqlite:///{(DIR_STORE / 'mlflow.db').as_posix()}"
-ARTIFACT_ROOT = (DIR_STORE / "mlartifacts").as_posix()
+ARTIFACT_ROOT = (DIR_STORE / "mlartifacts").as_uri()
 
 MLFLOW_EXPERIMENT_NAME = "tc_usdt_bolivia_diario"
 
