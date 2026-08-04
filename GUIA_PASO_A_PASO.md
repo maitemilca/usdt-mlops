@@ -941,6 +941,25 @@ print(f"Alias '{cfg.DEPLOYMENT_ALIAS}' -> version {version.version} (run {versio
 PY
 ```
 
+**Y actualizá la ficha del modelo desplegado.** Este paso es obligatorio:
+
+```bash
+cd src && python actualizar_ficha.py && cd ..
+```
+
+`train.py` solo escribe `MODELO_DESPLEGADO.md` cuando el entrenamiento además
+mueve el alias. Como acá la promoción se hizo aparte —a propósito, porque
+registrar y desplegar son decisiones distintas— la ficha quedaría diciendo que
+la versión desplegada es la 1 mientras el clúster sirve la 2. Ese desfase entre
+la documentación y la realidad es exactamente lo que la consigna 3.3.2 pide
+evitar.
+
+**Deberías ver:**
+
+```
+Ficha actualizada: tc-usdt-bob-direccion v2 (alias champion, run ...)
+```
+
 Para que el clúster tome la versión nueva hay que **reconstruir la imagen y
 reiniciar el despliegue**, porque el store viaja dentro de la imagen:
 
