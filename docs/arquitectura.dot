@@ -1,0 +1,116 @@
+// Diagrama de arquitectura del proyecto.
+//
+// Regenerar el PNG y el SVG con:
+//     dot -Tpng docs/arquitectura.dot -o docs/arquitectura.png
+//     dot -Tsvg docs/arquitectura.dot -o docs/arquitectura.svg
+
+digraph arquitectura {
+    rankdir=TB;
+    bgcolor="white";
+    fontname="Helvetica";
+    compound=true;
+    nodesep=0.35;
+    ranksep=0.55;
+
+    node [shape=box, style="rounded,filled", fontname="Helvetica",
+          fontsize=11, margin="0.18,0.12", penwidth=1.2];
+    edge [fontname="Helvetica", fontsize=9, color="#555555", penwidth=1.1];
+
+    // ---------- Datos ----------
+    subgraph cluster_datos {
+        label="  Datos  ";
+        fontname="Helvetica-Bold"; fontsize=12; fontcolor="#37474F";
+        style="rounded,filled"; fillcolor="#ECEFF1"; color="#B0BEC5";
+
+        csv    [label="usdtbol_full.csv\n2.937 cotizaciones P2P\n2024-08 a 2026-07",
+                fillcolor="#CFD8DC", color="#78909C"];
+        tco    [label="TCO del BCB\nsegunda fuente, contexto\ndel cambio de regimen",
+                fillcolor="#CFD8DC", color="#78909C"];
+        feats  [label="features.py\nserie diaria + 8 variables\nestacionarias (retornos)",
+                fillcolor="#B0BEC5", color="#607D8B"];
+    }
+
+    csv -> feats;
+    tco -> feats [style=dashed, label=" contexto "];
+
+    // ---------- Fase 1 ----------
+    subgraph cluster_fase1 {
+        label="  Fase 1 - Experimentacion y registro  ";
+        fontname="Helvetica-Bold"; fontsize=12; fontcolor="#1B5E20";
+        style="rounded,filled"; fillcolor="#E8F5E9"; color="#A5D6A7";
+
+        train    [label="train.py\n10 corridas: baseline, logistica,\nRandom Forest, XGBoost",
+                  fillcolor="#C8E6C9", color="#66BB6A"];
+        seleccion[label="Seleccion por validacion\nwalk-forward\n(el test queda intacto)",
+                  fillcolor="#C8E6C9", color="#66BB6A"];
+        registry [label="MLflow Model Registry\ntc-usdt-bob-direccion\nv1 - v2   alias @champion",
+                  fillcolor="#A5D6A7", color="#43A047", penwidth=2];
+    }
+
+    feats -> train;
+    train -> seleccion -> registry;
+
+    // ---------- Fase 2 ----------
+    subgraph cluster_fase2 {
+        label="  Fase 2 - Contenerizacion  ";
+        fontname="Helvetica-Bold"; fontsize=12; fontcolor="#0D47A1";
+        style="rounded,filled"; fillcolor="#E3F2FD"; color="#90CAF9";
+
+        portar [label="portar_store.py\nreescribe las rutas absolutas\ndel store (conserva el run_id)",
+                fillcolor="#BBDEFB", color="#42A5F5"];
+        imagen [label="Imagen tc-usdt-api\npython:3.12-slim\n12 dependencias fijadas",
+                fillcolor="#90CAF9", color="#1E88E5", penwidth=2];
+    }
+
+    registry -> portar [label="  copia el store  "];
+    portar -> imagen;
+
+    // ---------- Fase 3 ----------
+    subgraph cluster_fase3 {
+        label="  Fase 3 - Despliegue  ";
+        fontname="Helvetica-Bold"; fontsize=12; fontcolor="#4A148C";
+        style="rounded,filled"; fillcolor="#F3E5F5"; color="#CE93D8";
+
+        deploy  [label="Deployment\n3 replicas\nstartup / readiness / liveness",
+                 fillcolor="#E1BEE7", color="#AB47BC"];
+        service [label="Service NodePort :30080\nreparte el trafico\nserved_by_pod en cada respuesta",
+                 fillcolor="#CE93D8", color="#8E24AA", penwidth=2];
+    }
+
+    imagen -> deploy;
+    deploy -> service;
+
+    // ---------- Consumo ----------
+    ui [label="Interfaz Streamlit\ncliente HTTP puro, entorno propio\nsin mlflow ni sklearn instalados",
+        fillcolor="#FFF9C4", color="#FBC02D", penwidth=1.5];
+    service -> ui [label="  POST /predict  "];
+
+    // ---------- Fase 6 ----------
+    subgraph cluster_fase6 {
+        label="  Fase 6 - Monitoreo  ";
+        fontname="Helvetica-Bold"; fontsize=12; fontcolor="#B71C1C";
+        style="rounded,filled"; fillcolor="#FFEBEE"; color="#EF9A9A";
+
+        ddrift [label="monitor_data_drift.py\nKS en las continuas\nPSI en las discretas",
+                fillcolor="#FFCDD2", color="#EF5350"];
+        cdrift [label="monitor_concept_drift.py\nexactitud balanceada mensual\numbral 0,50 = azar",
+                fillcolor="#FFCDD2", color="#EF5350"];
+        alarma [label="Criterio de reentrenamiento\n< 0,50 durante 2 meses\nse disparo en 2026-02",
+                shape=octagon, fillcolor="#EF9A9A", color="#C62828", penwidth=2];
+    }
+
+    feats    -> ddrift [label="  lotes nuevos  "];
+    registry -> cdrift [label="  modelo desplegado  ", style=dashed];
+    ddrift -> alarma;
+    cdrift -> alarma;
+
+    // Realimentacion: la alarma vuelve a la Fase 1
+    alarma -> train [label="  reentrenar y registrar v2  ",
+                     color="#C62828", penwidth=2, style=bold,
+                     fontcolor="#C62828", constraint=false];
+
+    // ---------- Pruebas ----------
+    tests [label="tests/  -  12 pruebas\nverifican que el detector\nno da falsos positivos",
+           shape=note, fillcolor="#FFFDE7", color="#F9A825"];
+    tests -> ddrift [style=dotted, arrowhead=empty, label="  valida  "];
+}
