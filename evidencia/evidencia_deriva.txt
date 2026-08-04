@@ -1,0 +1,272 @@
+
+###############################################################
+# 6.1 DATA DRIFT - control (debe dar VERDE, salida 0)
+# $ monitor_data_drift.py --escenario control
+###############################################################
+
+========================================================================
+CONTROL -- mitad aleatoria de X_train (se espera VERDE)
+referencia: 207 filas   |   lote evaluado: 104 filas
+========================================================================
+  KS   ret_1d           estadistico=0.0590  p=9.539e-01   -> estable
+  KS   ret_3d           estadistico=0.0308  p=1.000e+00   -> estable
+  KS   ret_7d           estadistico=0.0460  p=9.964e-01   -> estable
+  KS   vol_7d           estadistico=0.0650  p=9.061e-01   -> estable
+  KS   desv_media_7d    estadistico=0.0497  p=9.910e-01   -> estable
+  KS   desv_media_30d   estadistico=0.0437  p=9.983e-01   -> estable
+  PSI  dia_semana       psi=0.0467                    -> estable
+  PSI  es_fin_semana    psi=0.0078                    -> estable
+
+  VEREDICTO: VERDE (sin deriva)
+
+Grafico guardado en resultados/data_drift.png
+
+========================================================================
+RESUMEN
+========================================================================
+  control      esperado=VERDE  obtenido=VERDE  [ok]
+
+Codigo de salida: 0 (VERDE -- sin deriva)
+
+>>> codigo de salida: 0  (VERDE)
+
+###############################################################
+# 6.1 DATA DRIFT - post flexibilizacion (debe dar ROJO, salida 1)
+# $ monitor_data_drift.py --escenario post_flex
+###############################################################
+
+========================================================================
+LOTE REAL -- desde la flexibilizacion del 2026-06-29
+referencia: 207 filas   |   lote evaluado: 32 filas
+========================================================================
+  KS   ret_1d           estadistico=0.4360  p=2.719e-05   -> DERIVA
+  KS   ret_3d           estadistico=0.3755  p=5.223e-04   -> DERIVA
+  KS   ret_7d           estadistico=0.4834  p=1.920e-06   -> DERIVA
+  KS   vol_7d           estadistico=0.2415  p=6.487e-02   -> estable
+  KS   desv_media_7d    estadistico=0.5027  p=5.896e-07   -> DERIVA
+  KS   desv_media_30d   estadistico=0.4592  p=7.757e-06   -> DERIVA
+  PSI  dia_semana       psi=0.0277                    -> estable
+  PSI  es_fin_semana    psi=0.0174                    -> estable
+
+  VEREDICTO: ROJO (deriva detectada)
+
+Grafico guardado en resultados/data_drift.png
+
+========================================================================
+RESUMEN
+========================================================================
+  post_flex    esperado=ROJO   obtenido=ROJO   [ok]
+
+Codigo de salida: 1 (ROJO -- deriva detectada)
+
+>>> codigo de salida: 1  (ROJO)
+
+###############################################################
+# 6.1 DATA DRIFT - deriva inyectada (debe dar ROJO, salida 1)
+# $ monitor_data_drift.py --escenario sintetico
+###############################################################
+
+========================================================================
+SINTETICO -- deriva inyectada a proposito (se espera ROJO)
+referencia: 207 filas   |   lote evaluado: 207 filas
+========================================================================
+  KS   ret_1d           estadistico=0.3382  p=6.942e-11   -> DERIVA
+  KS   ret_3d           estadistico=0.2415  p=1.039e-05   -> DERIVA
+  KS   ret_7d           estadistico=0.3140  p=2.030e-09   -> DERIVA
+  KS   vol_7d           estadistico=0.7005  p=5.593e-49   -> DERIVA
+  KS   desv_media_7d    estadistico=0.2802  p=1.464e-07   -> DERIVA
+  KS   desv_media_30d   estadistico=0.3092  p=3.862e-09   -> DERIVA
+  PSI  dia_semana       psi=0.0000                    -> estable
+  PSI  es_fin_semana    psi=0.0000                    -> estable
+
+  VEREDICTO: ROJO (deriva detectada)
+
+Grafico guardado en resultados/data_drift.png
+
+========================================================================
+RESUMEN
+========================================================================
+  sintetico    esperado=ROJO   obtenido=ROJO   [ok]
+
+Codigo de salida: 1 (ROJO -- deriva detectada)
+
+>>> codigo de salida: 1  (ROJO)
+
+###############################################################
+# 6.1 DATA DRIFT - reporte completo
+# $ monitor_data_drift.py --escenario todos
+###############################################################
+
+========================================================================
+CONTROL -- mitad aleatoria de X_train (se espera VERDE)
+referencia: 207 filas   |   lote evaluado: 104 filas
+========================================================================
+  KS   ret_1d           estadistico=0.0590  p=9.539e-01   -> estable
+  KS   ret_3d           estadistico=0.0308  p=1.000e+00   -> estable
+  KS   ret_7d           estadistico=0.0460  p=9.964e-01   -> estable
+  KS   vol_7d           estadistico=0.0650  p=9.061e-01   -> estable
+  KS   desv_media_7d    estadistico=0.0497  p=9.910e-01   -> estable
+  KS   desv_media_30d   estadistico=0.0437  p=9.983e-01   -> estable
+  PSI  dia_semana       psi=0.0467                    -> estable
+  PSI  es_fin_semana    psi=0.0078                    -> estable
+
+  VEREDICTO: VERDE (sin deriva)
+
+========================================================================
+LOTE REAL -- de 2025-12-11 a la flexibilizacion
+referencia: 207 filas   |   lote evaluado: 197 filas
+========================================================================
+  KS   ret_1d           estadistico=0.1687  p=5.399e-03   -> DERIVA
+  KS   ret_3d           estadistico=0.1494  p=1.909e-02   -> DERIVA
+  KS   ret_7d           estadistico=0.2077  p=2.625e-04   -> DERIVA
+  KS   vol_7d           estadistico=0.3379  p=9.643e-11   -> DERIVA
+  KS   desv_media_7d    estadistico=0.1851  p=1.628e-03   -> DERIVA
+  KS   desv_media_30d   estadistico=0.2601  p=1.620e-06   -> DERIVA
+  PSI  dia_semana       psi=0.0084                    -> estable
+  PSI  es_fin_semana    psi=0.0030                    -> estable
+
+  VEREDICTO: ROJO (deriva detectada)
+
+========================================================================
+LOTE REAL -- desde la flexibilizacion del 2026-06-29
+referencia: 207 filas   |   lote evaluado: 32 filas
+========================================================================
+  KS   ret_1d           estadistico=0.4360  p=2.719e-05   -> DERIVA
+  KS   ret_3d           estadistico=0.3755  p=5.223e-04   -> DERIVA
+  KS   ret_7d           estadistico=0.4834  p=1.920e-06   -> DERIVA
+  KS   vol_7d           estadistico=0.2415  p=6.487e-02   -> estable
+  KS   desv_media_7d    estadistico=0.5027  p=5.896e-07   -> DERIVA
+  KS   desv_media_30d   estadistico=0.4592  p=7.757e-06   -> DERIVA
+  PSI  dia_semana       psi=0.0277                    -> estable
+  PSI  es_fin_semana    psi=0.0174                    -> estable
+
+  VEREDICTO: ROJO (deriva detectada)
+
+========================================================================
+SINTETICO -- deriva inyectada a proposito (se espera ROJO)
+referencia: 207 filas   |   lote evaluado: 207 filas
+========================================================================
+  KS   ret_1d           estadistico=0.3382  p=6.942e-11   -> DERIVA
+  KS   ret_3d           estadistico=0.2415  p=1.039e-05   -> DERIVA
+  KS   ret_7d           estadistico=0.3140  p=2.030e-09   -> DERIVA
+  KS   vol_7d           estadistico=0.7005  p=5.593e-49   -> DERIVA
+  KS   desv_media_7d    estadistico=0.2802  p=1.464e-07   -> DERIVA
+  KS   desv_media_30d   estadistico=0.3092  p=3.862e-09   -> DERIVA
+  PSI  dia_semana       psi=0.0000                    -> estable
+  PSI  es_fin_semana    psi=0.0000                    -> estable
+
+  VEREDICTO: ROJO (deriva detectada)
+
+Grafico guardado en resultados/data_drift.png
+
+========================================================================
+RESUMEN
+========================================================================
+  control      esperado=VERDE  obtenido=VERDE  [ok]
+  pre_flex     esperado=ROJO   obtenido=ROJO   [ok]
+  post_flex    esperado=ROJO   obtenido=ROJO   [ok]
+  sintetico    esperado=ROJO   obtenido=ROJO   [ok]
+
+Codigo de salida: 1 (ROJO -- deriva detectada)
+
+>>> codigo de salida: 1  (ROJO)
+
+###############################################################
+# 6.2 CONCEPT DRIFT - holdout real
+# $ monitor_concept_drift.py
+###############################################################
+Modelo monitoreado: tc-usdt-bob-direccion v1 (alias champion, run a6fd0fb36253435ba404fa3303bedcfc)
+Exactitud balanceada de referencia (test de la Fase 1): 0.6410
+
+========================================================================
+CURVA MENSUAL SOBRE EL HOLDOUT REAL
+========================================================================
+          n  pct_al_alza  exactitud_balanceada
+mes                                           
+2025-12  21       0.5714                0.6111
+2026-01  31       0.3871                0.4781
+2026-02  27       0.3704                0.4706
+2026-03  30       0.6333                0.4306
+2026-04  30       0.6667                0.6000
+2026-05  31       0.4839                0.5458
+2026-06  29       0.4138                0.2770
+2026-07  30       0.8000                0.5833
+
+========================================================================
+CRITERIO DE REENTRENAMIENTO
+========================================================================
+  Alarma si la exactitud balanceada < 0.50 (azar) durante 2 meses seguidos.
+
+  ALARMA: se habria disparado en 2026-02.
+  Accion: reentrenar incorporando los datos nuevos y registrar una version nueva en el Model Registry.
+
+Grafico guardado en resultados/concept_drift.png
+
+RETRASO DE ETIQUETA (label delay)
+---------------------------------
+Todo lo anterior supone que ya se conoce la respuesta correcta de cada dia.
+En produccion eso no pasa nunca en el momento de predecir.
+
+En este modelo el retraso es corto: la etiqueta de hoy (si el tipo de cambio
+subio o no) se sabe manana. Es una situacion mucho mas comoda que la de un
+modelo de riesgo crediticio, donde confirmar un incumplimiento puede tomar
+meses. Pero el retraso existe, y con lotes mensuales significa que un mes malo
+recien se puede confirmar cuando ya termino.
+
+Que se hace mientras tanto:
+
+  1. El monitor de data drift (Fase 6.1) es la alerta temprana. No necesita
+     etiquetas: compara solo las entradas. Si las entradas se van del rango
+     conocido, hay motivo para desconfiar del modelo aunque todavia no se
+     pueda medir su error.
+
+  2. Se vigila la distribucion de las probabilidades que devuelve el modelo.
+     Si empieza a responder casi siempre lo mismo, o se concentra alrededor
+     de 0,5, esta perdiendo capacidad de discriminar. Tampoco necesita
+     etiquetas.
+
+  3. Se usa el error del lote anterior como estimacion del actual. A esta
+     granularidad los regimenes cambiarios cambian en semanas o meses, no de
+     un dia para otro, asi que el ultimo error medido es una aproximacion
+     razonable mientras llega el definitivo.
+
+  4. Ante la duda, se degrada con cuidado: se acompana la respuesta con la
+     probabilidad y se avisa cuando la confianza es baja, en vez de presentar
+     una direccion como si fuera segura.
+
+Codigo de salida: 1 (ROJO -- concept drift sostenido)
+
+>>> codigo de salida: 1  (ROJO)
+
+###############################################################
+# 6.2 CONCEPT DRIFT - control sintetico
+# $ monitor_concept_drift.py --escenario sintetico
+###############################################################
+Modelo monitoreado: tc-usdt-bob-direccion v1 (alias champion, run a6fd0fb36253435ba404fa3303bedcfc)
+Exactitud balanceada de referencia (test de la Fase 1): 0.6410
+
+========================================================================
+CONTROL SINTETICO -- barrido de inversion de etiquetas
+========================================================================
+  Las variables de entrada NO se tocan: solo cambia la relacion
+  entrada-respuesta. Toda degradacion es concept drift puro.
+
+     0% invertido (  0 etiquetas)  exactitud balanceada = 0.6410   -> no dispara
+    25% invertido ( 13 etiquetas)  exactitud balanceada = 0.5774   -> no dispara
+    50% invertido ( 26 etiquetas)  exactitud balanceada = 0.5289   -> no dispara
+    75% invertido ( 39 etiquetas)  exactitud balanceada = 0.5197   -> no dispara
+   100% invertido ( 52 etiquetas)  exactitud balanceada = 0.3590   -> DISPARA (rojo)
+
+  Referencia sin manipular: 0.6410
+
+  VEREDICTO con inversion total: ROJO -- el detector dispara, es correcto
+
+  Nota: con el 50% invertido el detector no dispara, y esta bien. Con
+  la mitad de las etiquetas dadas vuelta el modelo acierta en un tramo
+  y falla en el otro, asi que su rendimiento real es el del azar: el
+  monitor esta reportando la verdad. Lo que muestra el barrido es que
+  una inversion parcial es el caso mas dificil de detectar.
+
+Codigo de salida: 1
+
+>>> codigo de salida: 1  (ROJO)
