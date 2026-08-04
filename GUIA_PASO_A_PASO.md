@@ -310,7 +310,25 @@ Abrí <http://localhost:5000> en el navegador.
 > busca una carpeta `mlruns/` que no existe y vas a ver la interfaz vacía. El
 > proyecto guarda todo en `mlflow_store/mlflow.db`.
 
-### 3.2 Recorrer lo que te van a pedir
+### 3.2 Cambiar a la vista de entrenamiento (importante)
+
+MLflow 3.x abre por defecto en la vista **GenAI**, pensada para proyectos de
+modelos de lenguaje. Ahí vas a ver Traces, Sessions, Judges y Prompts, todo
+vacío y sin rastro de tus corridas. No es que falten: es la vista equivocada.
+
+Arriba a la izquierda, justo debajo del logo de MLflow, hay un selector:
+
+```
+[ GenAI ]  [ Model training ]
+              ↑ hacé click acá
+```
+
+Hacé click en **Model training**. También funciona **Training runs** en el
+menú de la izquierda.
+
+Recién ahí aparece la tabla con las 10 corridas del experimento.
+
+### 3.3 Recorrer lo que te van a pedir
 
 El enunciado (punto 3.4) pide poder hacer cuatro cosas en vivo. Practicalas:
 
@@ -318,17 +336,30 @@ El enunciado (punto 3.4) pide poder hacer cuatro cosas en vivo. Practicalas:
 Click en `tc_usdt_bolivia_diario` en la izquierda. Vas a ver las 10 corridas.
 Cada run es una configuración de hiperparámetros sobre los mismos datos.
 
-**b) Ordenar y filtrar por la métrica principal.**
-Click en la cabecera de la columna `exactitud_balanceada_cv` para ordenar.
-Si no aparece, usá el botón **Columns** y activala.
+**b) Mostrar las métricas.**
+MLflow 3.15 no las muestra por defecto: la tabla arranca solo con Run Name,
+Created, Duration y Source. Click en **Columns** (o en *Show more columns*) y
+activá `exactitud_balanceada_cv`, `exactitud_balanceada`, `roc_auc` y
+`exactitud`.
 
-Para filtrar, en la barra de búsqueda:
+**c) Ordenar por la métrica principal.**
+No se ordena clickeando la cabecera. Usá el desplegable **`Sort: Created`** y
+elegí `exactitud_balanceada_cv`, descendente.
+
+Arriba queda `xgboost_cfg2` con 0,5860 y último `baseline_clase_mayoritaria`
+con 0,5000.
+
+**d) Filtrar.**
+En la barra de búsqueda:
 
 ```
 metrics.exactitud_balanceada_cv > 0.55
 ```
 
-**c) Comparar runs.**
+Quedan 4 corridas: los tres XGBoost y `bosque_cfg3`. Borrá el filtro para
+volver a verlas todas.
+
+**e) Comparar runs.**
 Tildá las casillas de `xgboost_cfg2`, `bosque_cfg3` y
 `baseline_clase_mayoritaria`, y hacé click en **Compare**. Vas a ver los
 hiperparámetros y las métricas lado a lado.
@@ -338,11 +369,11 @@ hiperparámetros y las métricas lado a lado.
 > (0,641), pero se eligió `xgboost_cfg2` porque ganó en **walk-forward**.
 > Elegir mirando el test lo invalidaría como evaluación independiente.
 
-**d) Abrir el Model Registry.**
+**f) Abrir el Model Registry.**
 Pestaña **Models** arriba → `tc-usdt-bob-direccion` → vas a ver la versión 1
 con el alias `champion` y la descripción que escribió `train.py`.
 
-### 3.3 Ver los gráficos de un run
+### 3.4 Ver los gráficos de un run
 
 Entrá a `xgboost_cfg2` → pestaña **Artifacts** → `evaluacion.png`. Tiene la
 matriz de confusión y la curva ROC.
