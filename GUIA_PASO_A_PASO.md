@@ -310,7 +310,25 @@ Abrí <http://localhost:5000> en el navegador.
 > busca una carpeta `mlruns/` que no existe y vas a ver la interfaz vacía. El
 > proyecto guarda todo en `mlflow_store/mlflow.db`.
 
-### 3.2 Recorrer lo que te van a pedir
+### 3.2 Cambiar a la vista de entrenamiento (importante)
+
+MLflow 3.x abre por defecto en la vista **GenAI**, pensada para proyectos de
+modelos de lenguaje. Ahí vas a ver Traces, Sessions, Judges y Prompts, todo
+vacío y sin rastro de tus corridas. No es que falten: es la vista equivocada.
+
+Arriba a la izquierda, justo debajo del logo de MLflow, hay un selector:
+
+```
+[ GenAI ]  [ Model training ]
+              ↑ hacé click acá
+```
+
+Hacé click en **Model training**. También funciona **Training runs** en el
+menú de la izquierda.
+
+Recién ahí aparece la tabla con las 10 corridas del experimento.
+
+### 3.3 Recorrer lo que te van a pedir
 
 El enunciado (punto 3.4) pide poder hacer cuatro cosas en vivo. Practicalas:
 
@@ -318,17 +336,30 @@ El enunciado (punto 3.4) pide poder hacer cuatro cosas en vivo. Practicalas:
 Click en `tc_usdt_bolivia_diario` en la izquierda. Vas a ver las 10 corridas.
 Cada run es una configuración de hiperparámetros sobre los mismos datos.
 
-**b) Ordenar y filtrar por la métrica principal.**
-Click en la cabecera de la columna `exactitud_balanceada_cv` para ordenar.
-Si no aparece, usá el botón **Columns** y activala.
+**b) Mostrar las métricas.**
+MLflow 3.15 no las muestra por defecto: la tabla arranca solo con Run Name,
+Created, Duration y Source. Click en **Columns** (o en *Show more columns*) y
+activá `exactitud_balanceada_cv`, `exactitud_balanceada`, `roc_auc` y
+`exactitud`.
 
-Para filtrar, en la barra de búsqueda:
+**c) Ordenar por la métrica principal.**
+No se ordena clickeando la cabecera. Usá el desplegable **`Sort: Created`** y
+elegí `exactitud_balanceada_cv`, descendente.
+
+Arriba queda `xgboost_cfg2` con 0,5860 y último `baseline_clase_mayoritaria`
+con 0,5000.
+
+**d) Filtrar.**
+En la barra de búsqueda:
 
 ```
 metrics.exactitud_balanceada_cv > 0.55
 ```
 
-**c) Comparar runs.**
+Quedan 4 corridas: los tres XGBoost y `bosque_cfg3`. Borrá el filtro para
+volver a verlas todas.
+
+**e) Comparar runs.**
 Tildá las casillas de `xgboost_cfg2`, `bosque_cfg3` y
 `baseline_clase_mayoritaria`, y hacé click en **Compare**. Vas a ver los
 hiperparámetros y las métricas lado a lado.
@@ -338,11 +369,11 @@ hiperparámetros y las métricas lado a lado.
 > (0,641), pero se eligió `xgboost_cfg2` porque ganó en **walk-forward**.
 > Elegir mirando el test lo invalidaría como evaluación independiente.
 
-**d) Abrir el Model Registry.**
+**f) Abrir el Model Registry.**
 Pestaña **Models** arriba → `tc-usdt-bob-direccion` → vas a ver la versión 1
 con el alias `champion` y la descripción que escribió `train.py`.
 
-### 3.3 Ver los gráficos de un run
+### 3.4 Ver los gráficos de un run
 
 Entrá a `xgboost_cfg2` → pestaña **Artifacts** → `evaluacion.png`. Tiene la
 matriz de confusión y la curva ROC.
@@ -432,6 +463,13 @@ echo "Código de salida: $?"
 ```bash
 python monitor_data_drift.py --escenario sintetico
 echo "Código de salida: $?"
+```
+
+**Deberías ver** `VEREDICTO: ROJO (deriva detectada)` y `Código de salida: 1`.
+
+Y volvés a la raíz del repositorio, porque el paso 4.3 se corre desde ahí:
+
+```bash
 cd ..
 ```
 
@@ -559,14 +597,23 @@ Prefijo nuevo  : /app/mlflow_store
 docker images | grep tc-usdt-api
 ```
 
-> **CAPTURA 15** — el final del build con la reescritura de rutas y la imagen
-> creada.
+> **CAPTURA 15** — el build terminado, con el paso `[7/9] RUN python
+> src/portar_store.py` y el `naming to docker.io/library/tc-usdt-api:1.0`.
 >
-> *Texto para el informe:* «Construcción de la imagen. El paso de reescritura
-> de rutas es el que hace portable el store de MLflow: la base de datos guarda
-> rutas absolutas de artefactos, que no existen dentro del contenedor. Al
+> *Texto para el informe:* «Construcción de la imagen en nueve pasos. El paso
+> 7 es el que hace portable el store de MLflow: la base de datos guarda rutas
+> absolutas de artefactos, que no existen dentro del contenedor. Al
 > reescribirlas se conserva el `run_id` original, y el modelo que sirve
 > peticiones es exactamente el que se muestra en la interfaz de MLflow.»
+
+> **Docker no muestra la salida de los pasos que terminan bien**, así que no
+> vas a leer el "21 rutas reescritas" en pantalla. Si querés esa evidencia
+> explícita, rehacé el build con `docker build --no-cache --progress=plain -t
+> tc-usdt-api:1.0 .` (tarda ~5 minutos).
+>
+> No hace falta para el informe: la prueba de que la reescritura funcionó es
+> la captura 16. Si hubiera fallado, el contenedor no encontraría los
+> artefactos y no levantaría.
 
 ### 5.3 Probar el contenedor suelto
 
@@ -754,16 +801,65 @@ kubectl logs -l app=tc-usdt-api --tail=30 > evidencia/logs_pods.txt
 
 Vale hasta 15 puntos, **solo si el proyecto base está completo**.
 
-### 7.1 Instalar y levantar
+### 7.1 Instalar la interfaz en su PROPIO entorno
+
+La interfaz va en un entorno virtual separado, no en el `.venv` del proyecto.
+No es manía de orden: la consigna exige que el consumo de la API sea real
+contra el servicio en Kubernetes, y la única forma de demostrarlo sin lugar a
+dudas es que la interfaz **no tenga instaladas** las librerías de modelado.
+Si comparte entorno con MLflow, podría cargar el modelo y nadie podría
+descartar que lo hace.
 
 En una terminal nueva:
 
 ```bash
 cd ruta/donde/clonaste/usdt-mlops
-source .venv/bin/activate
-pip install -r ui/requirements.txt
-streamlit run ui/app_streamlit.py
+
+python3 -m venv .venv-ui
+.venv-ui/bin/pip install -q --upgrade pip
+.venv-ui/bin/pip install -q -r ui/requirements.txt
+echo ".venv-ui/" >> .gitignore
 ```
+
+Solo instala `streamlit`, `requests` y `pandas`.
+
+> **Si ya instalaste `ui/requirements.txt` dentro del `.venv` principal**,
+> limpialo. Streamlit arrastra `pyarrow` a una versión más vieja que la que
+> resuelve MLflow:
+> ```bash
+> .venv/bin/pip uninstall -y -q streamlit altair pydeck watchdog
+> .venv/bin/pip install -q "pyarrow==25.0.0"
+> ```
+
+### 7.1.1 Verificar la separación
+
+```bash
+.venv-ui/bin/python -c "import mlflow"    # debe fallar
+.venv-ui/bin/python -c "import sklearn"   # debe fallar
+.venv-ui/bin/python -c "import xgboost"   # debe fallar
+.venv-ui/bin/pip list | grep -iE "streamlit|requests|pandas"
+```
+
+Tres `ModuleNotFoundError` y después la lista con solo esos tres paquetes.
+
+> **CAPTURA 22a** — los tres errores de importación y la lista de paquetes.
+>
+> *Texto para el informe:* «La interfaz corre en un entorno virtual propio que
+> no tiene instaladas MLflow, scikit-learn ni XGBoost. No puede cargar el
+> modelo ni aunque se lo pidiera: es un cliente HTTP puro contra el servicio
+> desplegado en Kubernetes. La separación no es una convención documentada
+> sino una restricción verificable.»
+
+### 7.1.2 Levantar la interfaz
+
+```bash
+.venv-ui/bin/streamlit run ui/app_streamlit.py
+```
+
+No actives el `.venv` principal antes: usá el binario de `.venv-ui` directo.
+
+La primera vez Streamlit pide un correo para su boletín. **Dejalo en blanco y
+dale Enter**, es opcional.
 
 Se abre en <http://localhost:8501>.
 
@@ -845,6 +941,25 @@ print(f"Alias '{cfg.DEPLOYMENT_ALIAS}' -> version {version.version} (run {versio
 PY
 ```
 
+**Y actualizá la ficha del modelo desplegado.** Este paso es obligatorio:
+
+```bash
+cd src && python actualizar_ficha.py && cd ..
+```
+
+`train.py` solo escribe `MODELO_DESPLEGADO.md` cuando el entrenamiento además
+mueve el alias. Como acá la promoción se hizo aparte —a propósito, porque
+registrar y desplegar son decisiones distintas— la ficha quedaría diciendo que
+la versión desplegada es la 1 mientras el clúster sirve la 2. Ese desfase entre
+la documentación y la realidad es exactamente lo que la consigna 3.3.2 pide
+evitar.
+
+**Deberías ver:**
+
+```
+Ficha actualizada: tc-usdt-bob-direccion v2 (alias champion, run ...)
+```
+
 Para que el clúster tome la versión nueva hay que **reconstruir la imagen y
 reiniciar el despliegue**, porque el store viaja dentro de la imagen:
 
@@ -878,75 +993,80 @@ kubectl rollout undo deployment/tc-usdt-api
 **Es obligatorio**, y el enunciado avisa que el historial de commits se revisa
 como evidencia del reparto de trabajo.
 
-### 9.1 Inicializar
+> **El repositorio ya existe: `github.com/maitemilca/usdt-mlops`.**
+> No corras `git init` ni `git remote add`. Solo se commitea lo que se va
+> generando.
+
+### 9.1 Ver qué hay pendiente
 
 ```bash
-git init
-git add .
-git status
+git status --short
 ```
 
-Verificá que **no** aparezcan `.venv/` ni `mlflow_store/`: el `.gitignore` ya
-los excluye.
+Comprobá que **no** aparezcan `.venv/`, `.venv-ui/` ni `mlflow_store/`: el
+`.gitignore` los excluye. Si ves un archivo `.~lock.*#`, es de LibreOffice —
+cerrá el programa antes de seguir.
 
-### 9.2 Commits
+### 9.2 Commitear lo pendiente
 
-En vez de un commit gigante, hacelos por fase — así el historial cuenta la
-historia del proyecto:
+Cada uno commitea los componentes que le tocan según `REPARTO_TRABAJO.md`, con
+mensajes que digan qué fase cubren:
 
 ```bash
-git config user.name "Elmar Rodas Banegas"
-git config user.email "elmarcinho23@gmail.com"
+git config user.name "Tu Nombre"
+git config user.email "tu@correo.com"
 
-git add src/config.py src/features.py data/ requirements.txt .gitignore
-git commit -m "Datos y variables: serie diaria y features estacionarias"
-
-git add src/train.py scripts/01_preparar_entorno.sh scripts/02_entrenar.sh
-git commit -m "Fase 1: entrenamiento, MLflow y registro del modelo"
-
-git add src/drift_common.py src/monitor_data_drift.py src/monitor_concept_drift.py tests/ scripts/03_pruebas.sh scripts/04_monitores_deriva.sh
-git commit -m "Fase 6: monitores de data drift y concept drift"
-
-git add src/app.py src/portar_store.py Dockerfile .dockerignore
-git commit -m "Fase 2: servicio de inferencia y contenerizacion"
-
-git add k8s/ scripts/05_pruebas_kubernetes.sh
-git commit -m "Fase 3: despliegue en Kubernetes con replicas"
-
-git add ui/ scripts/06_reentrenar_v2.sh
-git commit -m "Extra: interfaz web y reentrenamiento version 2"
-
-git add .
-git commit -m "Documentacion: arquitectura, guia y reparto de trabajo"
-
-git log --oneline
+git add <los archivos de tu parte>
+git commit -m "Descripcion clara de que cubre este commit"
+git push
 ```
 
-### 9.3 Subir a GitHub
+### 9.3 Versionar la evidencia generada
+
+Al terminar de correr las fases quedan archivos de evidencia que por defecto
+están ignorados, porque durante el desarrollo cambian en cada ejecución y
+generarían conflictos entre las dos máquinas:
+
+```
+evidencia/evidencia_deriva.txt
+evidencia/evidencia_kubernetes.txt
+evidencia/estado_cluster.txt
+evidencia/describe_deployment.txt
+evidencia/logs_pods.txt
+resultados/data_drift.png
+resultados/concept_drift.png
+MODELO_DESPLEGADO.md
+```
+
+**Súbanlos una sola vez, al final, cuando los dos hayan terminado de
+ejecutar.** Son ~280 KB en total y hacen que el repositorio quede
+autocontenido: quien abra el enlace ve el código y la evidencia sin
+descargar nada más.
 
 ```bash
-gh repo create tc-usdt-mlops --private --source=. --push
+git add -f evidencia/*.txt resultados/*.png MODELO_DESPLEGADO.md
+git commit -m "Evidencia de ejecucion de las fases 1, 2, 3 y 6"
+git push
 ```
 
-O manualmente, creando el repositorio en github.com y después:
+El `-f` fuerza el `add` saltándose el `.gitignore`.
+
+### 9.4 Verificar que el historial respalde el reparto
 
 ```bash
-git remote add origin https://github.com/TU_USUARIO/tc-usdt-mlops.git
-git branch -M main
-git push -u origin main
+git log --oneline --format='%an  %s'
 ```
 
-> **CAPTURA 26** — `git log --oneline` con los commits por fase.
+Contrastá esa salida con la tabla de `REPARTO_TRABAJO.md`. Si alguien figura
+como responsable de un componente que nunca commiteó, hay que corregir la
+tabla o repartir de nuevo — el enunciado dice que ese historial se revisa
+como evidencia.
+
+> **CAPTURA 26** — `git log --oneline` con los commits de los dos integrantes.
 >
-> *Texto para el informe:* «Historial de commits organizado por fase del
-> proyecto, como evidencia del trabajo realizado.»
-
-### 9.4 Completar el reparto
-
-Abrí `REPARTO_TRABAJO.md` y llená la columna de responsables. **Tiene que
-coincidir con quién commiteó qué.**
-
----
+> *Texto para el informe:* «Historial de commits del repositorio, organizado
+> por fase del proyecto y con la autoría de cada integrante, como evidencia
+> del reparto de trabajo declarado.»
 
 ## Paso 10 — Armar la entrega
 

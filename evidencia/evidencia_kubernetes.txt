@@ -1,0 +1,138 @@
+===============================================================
+ EVIDENCIA FASE 3 - KUBERNETES
+ Fecha: 2026-08-04 14:55:30
+ Cluster: docker-desktop
+===============================================================
+
+Esperando a que las replicas esten listas...
+deployment.apps/tc-usdt-api condition met
+
+
+---------------------------------------------------------------
+ DEMOSTRACION 1 - Tres o mas replicas en Running simultaneamente
+---------------------------------------------------------------
+$ kubectl get pods -l app=tc-usdt-api -o wide
+NAME                           READY   STATUS    RESTARTS   AGE    IP          NODE             NOMINATED NODE   READINESS GATES
+tc-usdt-api-869b4b4d9f-9hzmx   1/1     Running   0          2m3s   10.1.0.49   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m3s   10.1.0.50   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m3s   10.1.0.48   docker-desktop   <none>           <none>
+
+Pods en Running: 3
+RESULTADO: OK - hay 3 replicas corriendo a la vez.
+
+
+---------------------------------------------------------------
+ DEMOSTRACION 2 - El Service reparte el trafico entre replicas
+---------------------------------------------------------------
+Cada respuesta trae el campo served_by_pod, que es el hostname del
+contenedor. En Kubernetes ese hostname es el nombre del pod.
+
+  peticion  1 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion  2 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion  3 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion  4 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion  5 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion  6 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion  7 -> tc-usdt-api-869b4b4d9f-tpn8t
+  peticion  8 -> tc-usdt-api-869b4b4d9f-tpn8t
+  peticion  9 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion 10 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 11 -> tc-usdt-api-869b4b4d9f-tpn8t
+  peticion 12 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 13 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion 14 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 15 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion 16 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 17 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 18 -> tc-usdt-api-869b4b4d9f-9hzmx
+  peticion 19 -> tc-usdt-api-869b4b4d9f-b78ct
+  peticion 20 -> tc-usdt-api-869b4b4d9f-9hzmx
+
+Reparto de las 20 peticiones:
+  tc-usdt-api-869b4b4d9f-9hzmx : 9 peticiones
+  tc-usdt-api-869b4b4d9f-b78ct : 8 peticiones
+  tc-usdt-api-869b4b4d9f-tpn8t : 3 peticiones
+
+Pods distintos que respondieron: 3
+RESULTADO: OK - el trafico se reparte entre 3 pods.
+
+
+---------------------------------------------------------------
+ DEMOSTRACION 3 - Autorreparacion al eliminar un pod
+---------------------------------------------------------------
+Estado antes de eliminar:
+$ kubectl get pods -l app=tc-usdt-api
+NAME                           READY   STATUS    RESTARTS   AGE
+tc-usdt-api-869b4b4d9f-9hzmx   1/1     Running   0          2m4s
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m4s
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m4s
+
+Eliminando el pod: tc-usdt-api-869b4b4d9f-9hzmx
+pod "tc-usdt-api-869b4b4d9f-9hzmx" deleted from default namespace
+
+Inmediatamente despues (el viejo en Terminating, el nuevo creandose):
+$ kubectl get pods -l app=tc-usdt-api
+NAME                           READY   STATUS    RESTARTS   AGE
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m8s
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m8s
+tc-usdt-api-869b4b4d9f-zw9hc   0/1     Running   0          4s
+
+El servicio sigue respondiendo durante el reemplazo:
+  intento 1 -> {"estado":"ok","served_by_pod":"tc-usdt-api-869b4b4d9f-tpn8t","error":null}
+  intento 2 -> {"estado":"ok","served_by_pod":"tc-usdt-api-869b4b4d9f-b78ct","error":null}
+  intento 3 -> {"estado":"ok","served_by_pod":"tc-usdt-api-869b4b4d9f-tpn8t","error":null}
+  intento 4 -> {"estado":"ok","served_by_pod":"tc-usdt-api-869b4b4d9f-tpn8t","error":null}
+  intento 5 -> {"estado":"ok","served_by_pod":"tc-usdt-api-869b4b4d9f-b78ct","error":null}
+
+Esperando a que el reemplazo este listo...
+deployment.apps/tc-usdt-api condition met
+
+Estado final (el pod eliminado ya no esta; hay uno nuevo con otro nombre):
+$ kubectl get pods -l app=tc-usdt-api -o wide
+NAME                           READY   STATUS    RESTARTS   AGE     IP          NODE             NOMINATED NODE   READINESS GATES
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m19s   10.1.0.50   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m19s   10.1.0.48   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-zw9hc   0/1     Running   0          15s     10.1.0.51   docker-desktop   <none>           <none>
+
+RESULTADO: OK - Kubernetes repuso el pod y volvio a 3 replicas.
+
+
+---------------------------------------------------------------
+ DEMOSTRACION 4 - Escalado del numero de replicas
+---------------------------------------------------------------
+Escalando de 3 a 5 replicas:
+$ kubectl scale deployment tc-usdt-api --replicas=5
+deployment.apps/tc-usdt-api scaled
+$ kubectl get pods -l app=tc-usdt-api -o wide
+NAME                           READY   STATUS    RESTARTS   AGE     IP          NODE             NOMINATED NODE   READINESS GATES
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m45s   10.1.0.50   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-dgp55   1/1     Running   0          26s     10.1.0.53   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-pzrgh   1/1     Running   0          26s     10.1.0.52   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m45s   10.1.0.48   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-zw9hc   1/1     Running   0          41s     10.1.0.51   docker-desktop   <none>           <none>
+Replicas ahora: 5
+
+Volviendo a 3 replicas:
+$ kubectl scale deployment tc-usdt-api --replicas=3
+deployment.apps/tc-usdt-api scaled
+$ kubectl get pods -l app=tc-usdt-api -o wide
+NAME                           READY   STATUS    RESTARTS   AGE     IP          NODE             NOMINATED NODE   READINESS GATES
+tc-usdt-api-869b4b4d9f-b78ct   1/1     Running   0          2m54s   10.1.0.50   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-tpn8t   1/1     Running   0          2m54s   10.1.0.48   docker-desktop   <none>           <none>
+tc-usdt-api-869b4b4d9f-zw9hc   1/1     Running   0          50s     10.1.0.51   docker-desktop   <none>           <none>
+Replicas ahora: 3
+
+
+---------------------------------------------------------------
+ EXTRA - Que modelo esta sirviendo el cluster
+---------------------------------------------------------------
+$ curl http://localhost:30080/model-info
+{"modelo_registrado":"tc-usdt-bob-direccion","alias":"champion","version":1,"run_id":"a6fd0fb36253435ba404fa3303bedcfc","experimento":"tc_usdt_bolivia_diario","variables":["ret_1d","ret_3d","ret_7d","vol_7d","desv_media_7d","desv_media_30d","dia_semana","es_fin_semana"],"minimo_dias_historia":31,"served_by_pod":"tc-usdt-api-869b4b4d9f-zw9hc"}
+
+Esta version y este run_id tienen que coincidir con los de
+MODELO_DESPLEGADO.md y con lo que se ve en la interfaz de MLflow.
+
+
+===============================================================
+ Evidencia guardada en: evidencia/evidencia_kubernetes.txt
+===============================================================

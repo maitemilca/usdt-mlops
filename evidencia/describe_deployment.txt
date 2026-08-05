@@ -1,0 +1,44 @@
+Name:                   tc-usdt-api
+Namespace:              default
+CreationTimestamp:      Tue, 04 Aug 2026 14:53:27 -0400
+Labels:                 app=tc-usdt-api
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=tc-usdt-api
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  1 max unavailable, 1 max surge
+Pod Template:
+  Labels:  app=tc-usdt-api
+  Containers:
+   tc-usdt-api:
+    Image:      tc-usdt-api:1.0
+    Port:       8000/TCP (http)
+    Host Port:  0/TCP (http)
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:         50m
+      memory:      192Mi
+    Liveness:      http-get http://:http/health delay=0s timeout=3s period=20s #success=1 #failure=3
+    Readiness:     http-get http://:http/health delay=0s timeout=3s period=10s #success=1 #failure=3
+    Startup:       http-get http://:http/health delay=0s timeout=1s period=5s #success=1 #failure=12
+    Environment:   <none>
+    Mounts:        <none>
+  Volumes:         <none>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    NewReplicaSetAvailable
+  Available      True    MinimumReplicasAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   tc-usdt-api-869b4b4d9f (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  16m   deployment-controller  Scaled up replica set tc-usdt-api-869b4b4d9f from 0 to 3
+  Normal  ScalingReplicaSet  14m   deployment-controller  Scaled up replica set tc-usdt-api-869b4b4d9f from 3 to 5
+  Normal  ScalingReplicaSet  13m   deployment-controller  Scaled down replica set tc-usdt-api-869b4b4d9f from 5 to 3
